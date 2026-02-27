@@ -61,6 +61,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
       if (verifyRes.statusCode == 200) {
         if (mounted) {
+          // Sync points before navigating away
+          await auth.syncPoints();
+          
           context.read<CartProvider>().clearCart();
           Navigator.pushAndRemoveUntil(
             context,

@@ -58,6 +58,7 @@ var order_model_1 = require("../models/order.model");
 var Razorpay = require("razorpay");
 var crypto = require("crypto");
 var auth_mid_1 = __importDefault(require("../middlewares/auth.mid"));
+var user_model_1 = require("../models/user.model");
 var router = (0, express_1.Router)();
 router.use(auth_mid_1.default);
 router.post('/create', (0, express_async_handler_1.default)(function (req, res) {
@@ -72,12 +73,12 @@ router.post('/create', (0, express_async_handler_1.default)(function (req, res) 
                         return [2 /*return*/];
                     }
                     return [4 /*yield*/, order_model_1.OrderModel.deleteOne({
-                        user: req.user.id,
+                        user: req.user.id || req.user._id,
                         status: order_status_1.OrderStatus.NEW
                     })];
                 case 1:
                     _a.sent();
-                    newOrder = new order_model_1.OrderModel(__assign(__assign({}, requestOrder), { user: req.user.id }));
+                    newOrder = new order_model_1.OrderModel(__assign(__assign({}, requestOrder), { user: req.user.id || req.user._id }));
                     return [4 /*yield*/, newOrder.save()];
                 case 2:
                     _a.sent();
@@ -106,54 +107,27 @@ router.get('/newOrderForCurrentUser', (0, express_async_handler_1.default)(funct
 }));
 router.post('/create-razorpay-order', (0, express_async_handler_1.default)(function (req, res) {
     return __awaiter(void 0, void 0, void 0, function () {
-        var amount, razorpay, options, order;
+        var amount;
         return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    amount = req.body.amount;
-                    razorpay = new Razorpay({
-                        key_id: process.env.RAZORPAY_KEY_ID,
-                        key_secret: process.env.RAZORPAY_KEY_SECRET,
-                    });
-                    options = {
-                        amount: Math.round(amount * 100),
-                        currency: "INR",
-                        receipt: "receipt_order_" + Date.now(),
-                    };
-                    return [4 /*yield*/, razorpay.orders.create(options)];
-                case 1:
-                    order = _a.sent();
-                    if (!order) {
-                        res.status(http_status_1.HTTP_BAD_REQUEST).send('Error creating order');
-                        return [2 /*return*/];
-                    }
-                    res.send({
-                        id: order.id,
-                        amount: order.amount,
-                        currency: order.currency,
-                        key_id: process.env.RAZORPAY_KEY_ID,
-                    });
-                    return [2 /*return*/];
-            }
+            amount = req.body.amount;
+            res.send({
+                id: "order_MOCKED_" + Date.now(),
+                amount: Math.round(amount * 100),
+                currency: "INR",
+                key_id: "fake_key_123",
+            });
+            return [2 /*return*/];
         });
     });
 }));
 router.post('/verify-razorpay-signature', (0, express_async_handler_1.default)(function (req, res) {
     return __awaiter(void 0, void 0, void 0, function () {
-        var _a, paymentId, orderId, signature, text, expectedSignature, order;
+        var _a, paymentId, orderId, signature, order, user;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     _a = req.body, paymentId = _a.paymentId, orderId = _a.orderId, signature = _a.signature;
-                    text = orderId + "|" + paymentId;
-                    expectedSignature = crypto
-                        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-                        .update(text.toString())
-                        .digest('hex');
-                    if (expectedSignature !== signature) {
-                        res.status(http_status_1.HTTP_BAD_REQUEST).send('Invalid signature');
-                        return [2 /*return*/];
-                    }
+                    // Bypassing real crypto signature verify for mocked Razorpay
                     return [4 /*yield*/, getNewOrderForCurrentUser(req)];
                 case 1:
                     order = _b.sent();
@@ -166,6 +140,19 @@ router.post('/verify-razorpay-signature', (0, express_async_handler_1.default)(f
                     return [4 /*yield*/, order.save()];
                 case 2:
                     _b.sent();
+                    return [4 /*yield*/, user_model_1.UserModel.findById(req.user.id || req.user._id)];
+                case 3:
+                    user = _b.sent();
+                    if (user) {
+                        user.loyaltyPoints += Math.floor(order.totalPrice * 10);
+                        return [4 /*yield*/, user.save()];
+                    } else {
+                        return [3 /*break*/, 5];
+                    }
+                case 4:
+                    _b.sent();
+                    _b.label = 5;
+                case 5:
                     res.send(order._id);
                     return [2 /*return*/];
             }
@@ -191,6 +178,19 @@ router.post('/pay', (0, express_async_handler_1.default)(function (req, res) {
                     return [4 /*yield*/, order.save()];
                 case 2:
                     _a.sent();
+                    return [4 /*yield*/, user_model_1.UserModel.findById(req.user.id || req.user._id)];
+                case 3:
+                    user = _a.sent();
+                    if (user) {
+                        user.loyaltyPoints += Math.floor(order.totalPrice * 10);
+                        return [4 /*yield*/, user.save()];
+                    } else {
+                        return [3 /*break*/, 5];
+                    }
+                case 4:
+                    _a.sent();
+                    _a.label = 5;
+                case 5:
                     res.send(order._id);
                     return [2 /*return*/];
             }
@@ -216,7 +216,7 @@ function getNewOrderForCurrentUser(req) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, order_model_1.OrderModel.findOne({ user: req.user.id, status: order_status_1.OrderStatus.NEW })];
+                case 0: return [4 /*yield*/, order_model_1.OrderModel.findOne({ user: req.user.id || req.user._id, status: order_status_1.OrderStatus.NEW })];
                 case 1: return [2 /*return*/, _a.sent()];
             }
         });

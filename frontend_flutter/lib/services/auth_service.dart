@@ -59,6 +59,39 @@ class AuthService {
     }
   }
 
+  static Future<int> redeemPoints(String email, int points) async {
+    try {
+      final response = await http.post(
+        Uri.parse(AppUrls.userRedeemPointsUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'pointsToRedeem': points}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['loyaltyPoints'];
+      } else {
+        throw Exception(json.decode(response.body)['message'] ?? 'Failed to redeem points');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  static Future<int> fetchUserPoints(String email) async {
+    try {
+      final response = await http.get(Uri.parse('${AppUrls.userMeUrl}$email'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['loyaltyPoints'];
+      } else {
+        throw Exception('Failed to fetch points');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
   static Future<void> saveUserToLocal(User user) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString(_userKey, json.encode(user.toJson()));

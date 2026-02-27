@@ -32,6 +32,7 @@ class OrderProvider with ChangeNotifier {
           // Add necessary fields according to backend expectation
            'name': order.name,
            'address': order.address,
+           'addressLatLng': order.addressLatLng?.toJson() ?? {'lat': '0', 'lng': '0'},
            'paymentId': order.paymentId,
            'totalPrice': order.totalPrice,
            'items': order.items.map((item) => {

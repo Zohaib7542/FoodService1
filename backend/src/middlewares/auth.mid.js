@@ -11,7 +11,7 @@ exports.default = (function (req, res, next) {
         req.user = decodedUser;
     }
     catch (error) {
-        res.status(http_status_1.HTTP_UNAUTHORIZED).send();
+        return res.status(http_status_1.HTTP_UNAUTHORIZED).send();
     }
     return next();
 });

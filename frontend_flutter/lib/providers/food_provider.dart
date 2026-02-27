@@ -86,4 +86,19 @@ class FoodProvider with ChangeNotifier {
       return null;
     }
   }
+
+  Future<void> fetchFoodsForRestaurant(String restaurantId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _foods = await ApiService.getFoodsByRestaurant(restaurantId);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

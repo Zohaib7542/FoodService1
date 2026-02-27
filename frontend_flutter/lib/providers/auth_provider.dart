@@ -65,6 +65,31 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> syncPoints() async {
+    if (_currentUser == null) return;
+    try {
+      final points = await AuthService.fetchUserPoints(_currentUser!.email);
+      _currentUser!.loyaltyPoints = points;
+      await AuthService.saveUserToLocal(_currentUser!);
+      notifyListeners();
+    } catch (e) {
+      // Ignore err on background sync
+      debugPrint('Failed to sync points: $e');
+    }
+  }
+
+  Future<void> redeemPoints(int points) async {
+    if (_currentUser == null) return;
+    try {
+      final newBalance = await AuthService.redeemPoints(_currentUser!.email, points);
+      _currentUser!.loyaltyPoints = newBalance;
+      await AuthService.saveUserToLocal(_currentUser!);
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Could not redeem points: $e');
+    }
+  }
+
   Future<void> logout() async {
     await AuthService.logout();
     _currentUser = null;

@@ -98,11 +98,11 @@ router.post("/login", (0, express_async_handler_1.default)(function (req, res) {
 }));
 router.post('/register', (0, express_async_handler_1.default)(function (req, res) {
     return __awaiter(void 0, void 0, void 0, function () {
-        var _a, name, email, password, address, user, encryptedPassword, newUser, dbUser;
+        var _a, name, email, password, address, isRestaurantOwner, user, encryptedPassword, newUser, dbUser;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    _a = req.body, name = _a.name, email = _a.email, password = _a.password, address = _a.address;
+                    _a = req.body, name = _a.name, email = _a.email, password = _a.password, address = _a.address, isRestaurantOwner = _a.isRestaurantOwner;
                     return [4 /*yield*/, user_model_1.UserModel.findOne({ email: email })];
                 case 1:
                     user = _b.sent();
@@ -120,7 +120,8 @@ router.post('/register', (0, express_async_handler_1.default)(function (req, res
                         email: email.toLowerCase(),
                         password: encryptedPassword,
                         address: address,
-                        isAdmin: false
+                        isAdmin: false,
+                        isRestaurantOwner: isRestaurantOwner || false
                     };
                     return [4 /*yield*/, user_model_1.UserModel.create(newUser)];
                 case 3:
@@ -131,18 +132,69 @@ router.post('/register', (0, express_async_handler_1.default)(function (req, res
         });
     });
 }));
+router.post('/redeem-points', (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var _a, email, pointsToRedeem, user;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _a = req.body, email = _a.email, pointsToRedeem = _a.pointsToRedeem;
+                    return [4 /*yield*/, user_model_1.UserModel.findOne({ email: email })];
+                case 1:
+                    user = _b.sent();
+                    if (!user) {
+                        res.status(http_status_1.HTTP_BAD_REQUEST).send({ message: 'User not found' });
+                        return [2 /*return*/];
+                    }
+                    if (user.loyaltyPoints < pointsToRedeem) {
+                        res.status(http_status_1.HTTP_BAD_REQUEST).send({ message: 'Not enough points' });
+                        return [2 /*return*/];
+                    }
+                    user.loyaltyPoints -= pointsToRedeem;
+                    return [4 /*yield*/, user.save()];
+                case 2:
+                    _b.sent();
+                    res.send({ success: true, loyaltyPoints: user.loyaltyPoints });
+                    return [2 /*return*/];
+            }
+        });
+    });
+}));
+router.get('/me/:email', (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var email, user;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    email = req.params.email;
+                    return [4 /*yield*/, user_model_1.UserModel.findOne({ email: email })];
+                case 1:
+                    user = _a.sent();
+                    if (!user) {
+                        res.status(http_status_1.HTTP_BAD_REQUEST).send({ message: 'User not found' });
+                        return [2 /*return*/];
+                    }
+                    res.send({ loyaltyPoints: user.loyaltyPoints });
+                    return [2 /*return*/];
+            }
+        });
+    });
+}));
 var generateTokenReponse = function (user) {
+    var userId = user.id || user._id;
     var token = jsonwebtoken_1.default.sign({
-        id: user.id, email: user.email, isAdmin: user.isAdmin
+        id: userId, email: user.email, isAdmin: user.isAdmin, isRestaurantOwner: user.isRestaurantOwner
     }, process.env.JWT_SECRET, {
         expiresIn: "30d"
     });
     return {
-        id: user.id,
+        id: userId,
         email: user.email,
         name: user.name,
         address: user.address,
         isAdmin: user.isAdmin,
+        isRestaurantOwner: user.isRestaurantOwner,
+        loyaltyPoints: user.loyaltyPoints || 0,
         token: token
     };
 };

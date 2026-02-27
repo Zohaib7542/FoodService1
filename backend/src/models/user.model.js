@@ -8,6 +8,8 @@ exports.UserSchema = new mongoose_1.Schema({
     password: { type: String, required: true },
     address: { type: String, required: true },
     isAdmin: { type: Boolean, required: true },
+    isRestaurantOwner: { type: Boolean, required: true, default: false },
+    loyaltyPoints: { type: Number, required: true, default: 0 },
 }, {
     timestamps: true,
     toJSON: {

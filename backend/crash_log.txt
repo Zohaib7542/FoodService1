@@ -1,0 +1,33 @@
+
+> backend@1.0.0 start
+> cd src && node server.js
+
+Website served on http://localhost:5002
+connect successfully
+ValidationError: order validation failed: addressLatLng: Path `addressLatLng` is required.
+    at Document.invalidate (/Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/document.js:3123:32)
+    at /Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/document.js:2911:17
+    at /Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/schema/SubdocumentPath.js:254:14
+    at /Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/schematype.js:1349:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:77:11)
+ValidationError: order validation failed: addressLatLng: Path `addressLatLng` is required.
+    at Document.invalidate (/Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/document.js:3123:32)
+    at /Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/document.js:2911:17
+    at /Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/schema/SubdocumentPath.js:254:14
+    at /Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/schematype.js:1349:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:77:11)
+[object Object]
+[object Object]
+CastError: Cast to ObjectId failed for value "123" (type string) at path "user" for model "order"
+    at model.Query.exec (/Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/query.js:4897:21)
+    at Query.then (/Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/query.js:4996:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+[object Object]
+[object Object]
+[object Object]
+[object Object]
+CastError: Cast to ObjectId failed for value "123" (type string) at path "user" for model "order"
+    at model.Query.exec (/Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/query.js:4897:21)
+    at Query.then (/Users/zohaib/Desktop/FoodService/backend/node_modules/mongoose/lib/query.js:4996:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+sh: line 1: 82446 Killed: 9               node server.js

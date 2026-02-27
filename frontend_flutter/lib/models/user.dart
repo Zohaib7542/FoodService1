@@ -5,6 +5,8 @@ class User {
   String address;
   String token;
   bool isAdmin;
+  bool isRestaurantOwner;
+  int loyaltyPoints;
 
   User({
     required this.id,
@@ -13,6 +15,8 @@ class User {
     required this.address,
     required this.token,
     required this.isAdmin,
+    required this.isRestaurantOwner,
+    this.loyaltyPoints = 0,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class User {
       address: json['address'] ?? '',
       token: json['token'] ?? '',
       isAdmin: json['isAdmin'] ?? false,
+      isRestaurantOwner: json['isRestaurantOwner'] ?? false,
+      loyaltyPoints: json['loyaltyPoints'] ?? 0,
     );
   }
 
@@ -34,6 +40,8 @@ class User {
       'address': address,
       'token': token,
       'isAdmin': isAdmin,
+      'isRestaurantOwner': isRestaurantOwner,
+      'loyaltyPoints': loyaltyPoints,
     };
   }
 }

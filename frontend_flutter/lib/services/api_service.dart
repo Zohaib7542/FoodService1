@@ -54,4 +54,14 @@ class ApiService {
       throw Exception('Failed to load food');
     }
   }
+
+  static Future<List<Food>> getFoodsByRestaurant(String restaurantId) async {
+    final response = await http.get(Uri.parse('${AppUrls.foodsByRestaurantUrl}$restaurantId'));
+    if (response.statusCode == 200) {
+      Iterable l = json.decode(response.body);
+      return List<Food>.from(l.map((model) => Food.fromJson(model)));
+    } else {
+      throw Exception('Failed to load restaurant foods');
+    }
+  }
 }

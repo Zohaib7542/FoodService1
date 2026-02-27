@@ -10,7 +10,8 @@ exports.FoodSchema = new mongoose_1.Schema({
     stars: { type: Number, required: true },
     imageUrl: { type: String, required: true },
     origins: { type: [String], required: true },
-    cookTime: { type: String, required: true }
+    cookTime: { type: String, required: true },
+    restaurantId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'restaurant', required: false }
 }, {
     toJSON: {
         virtuals: true

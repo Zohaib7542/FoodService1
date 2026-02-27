@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
-    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function () { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function () { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -43,58 +43,90 @@ var express_1 = require("express");
 var data_1 = require("../data");
 var express_async_handler_1 = __importDefault(require("express-async-handler"));
 var food_model_1 = require("../models/food.model");
+var restaurant_model_1 = require("../models/restaurant.model");
+var auth_mid_1 = __importDefault(require("../middlewares/auth.mid"));
+var http_status_1 = require("../constants/http_status");
 var router = (0, express_1.Router)();
-router.get('/seed', (0, express_async_handler_1.default)(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var foodsCount;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, food_model_1.FoodModel.countDocuments()];
-            case 1:
-                foodsCount = _a.sent();
-                if (foodsCount > 0) {
-                    res.send('Seed is already done!');
+router.get('/seed', (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var foodsCount, defaultRestaurant, seededRest, foodsToSeed;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, food_model_1.FoodModel.countDocuments()];
+                case 1:
+                    foodsCount = _a.sent();
+                    if (foodsCount > 0) {
+                        res.send('Seed is already done!');
+                        return [2 /*return*/];
+                    }
+
+                    // Create a default restaurant if it doesn't exist
+                    return [4 /*yield*/, restaurant_model_1.RestaurantModel.findOne({ name: "SevaSync Kitchen" })];
+                case 2:
+                    defaultRestaurant = _a.sent();
+                    if (defaultRestaurant) {
+                        seededRest = defaultRestaurant;
+                    } else {
+                        return [4 /*yield*/, restaurant_model_1.RestaurantModel.create({
+                            name: "SevaSync Kitchen",
+                            address: "Default Address",
+                            imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000",
+                            // Using a dummy object ID for owner since seed might not have one linked
+                            ownerId: "000000000000000000000000"
+                        })];
+                    }
+                case 3:
+                    seededRest = _a.sent();
+
+                    foodsToSeed = data_1.sample_foods.map(f => {
+                        return { ...f, restaurantId: seededRest._id.toString() };
+                    });
+                    return [4 /*yield*/, food_model_1.FoodModel.create(foodsToSeed)];
+                case 4:
+                    _a.sent();
+                    res.send('Seed Is Done!');
                     return [2 /*return*/];
-                }
-                return [4 /*yield*/, food_model_1.FoodModel.create(data_1.sample_foods)];
-            case 2:
-                _a.sent();
-                res.send('Seed Is Done!');
-                return [2 /*return*/];
-        }
+            }
+        });
     });
-}); }));
-router.get('/', (0, express_async_handler_1.default)(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var foods;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, food_model_1.FoodModel.find()];
-            case 1:
-                foods = _a.sent();
-                res.send(foods);
-                return [2 /*return*/];
-        }
+}));
+router.get('/', (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var foods;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, food_model_1.FoodModel.find()];
+                case 1:
+                    foods = _a.sent();
+                    res.send(foods);
+                    return [2 /*return*/];
+            }
+        });
     });
-}); }));
-router.get('/search/:searchTerm', (0, express_async_handler_1.default)(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var searchRegex, foods;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                searchRegex = new RegExp(req.params.searchTerm, 'i');
-                return [4 /*yield*/, food_model_1.FoodModel.find({ name: { $regex: searchRegex } })];
-            case 1:
-                foods = _a.sent();
-                res.send(foods);
-                return [2 /*return*/];
-        }
+}));
+router.get('/search/:searchTerm', (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var searchRegex, foods;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    searchRegex = new RegExp(req.params.searchTerm, 'i');
+                    return [4 /*yield*/, food_model_1.FoodModel.find({ name: { $regex: searchRegex } })];
+                case 1:
+                    foods = _a.sent();
+                    res.send(foods);
+                    return [2 /*return*/];
+            }
+        });
     });
-}); }));
-router.get('/tags', (0, express_async_handler_1.default)(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var tags, all;
-    var _a;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
-            case 0: return [4 /*yield*/, food_model_1.FoodModel.aggregate([
+}));
+router.get('/tags', (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var tags, all;
+        var _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0: return [4 /*yield*/, food_model_1.FoodModel.aggregate([
                     {
                         $unwind: '$tags',
                     },
@@ -112,43 +144,106 @@ router.get('/tags', (0, express_async_handler_1.default)(function (req, res) { r
                         },
                     },
                 ]).sort({ count: -1 })];
-            case 1:
-                tags = _b.sent();
-                _a = {
-                    name: 'All'
-                };
-                return [4 /*yield*/, food_model_1.FoodModel.countDocuments()];
-            case 2:
-                all = (_a.count = _b.sent(),
-                    _a);
-                tags.unshift(all);
-                res.send(tags);
-                return [2 /*return*/];
-        }
+                case 1:
+                    tags = _b.sent();
+                    _a = {
+                        name: 'All'
+                    };
+                    return [4 /*yield*/, food_model_1.FoodModel.countDocuments()];
+                case 2:
+                    all = (_a.count = _b.sent(),
+                        _a);
+                    tags.unshift(all);
+                    res.send(tags);
+                    return [2 /*return*/];
+            }
+        });
     });
-}); }));
-router.get('/tag/:tagName', (0, express_async_handler_1.default)(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var foods;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, food_model_1.FoodModel.find({ tags: req.params.tagName })];
-            case 1:
-                foods = _a.sent();
-                res.send(foods);
-                return [2 /*return*/];
-        }
+}));
+router.get('/tag/:tagName', (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var foods;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, food_model_1.FoodModel.find({ tags: req.params.tagName })];
+                case 1:
+                    foods = _a.sent();
+                    res.send(foods);
+                    return [2 /*return*/];
+            }
+        });
     });
-}); }));
-router.get('/:foodId', (0, express_async_handler_1.default)(function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var food;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, food_model_1.FoodModel.findById(req.params.foodId)];
-            case 1:
-                food = _a.sent();
-                res.send(food);
-                return [2 /*return*/];
-        }
+}));
+router.get('/:foodId', (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var food;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, food_model_1.FoodModel.findById(req.params.foodId)];
+                case 1:
+                    food = _a.sent();
+                    res.send(food);
+                    return [2 /*return*/];
+            }
+        });
     });
-}); }));
+}));
+
+router.get('/restaurant/:restaurantId', (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var foods;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, food_model_1.FoodModel.find({ restaurantId: req.params.restaurantId })];
+                case 1:
+                    foods = _a.sent();
+                    res.send(foods);
+                    return [2 /*return*/];
+            }
+        });
+    });
+}));
+
+router.post('/', auth_mid_1.default, (0, express_async_handler_1.default)(function (req, res) {
+    return __awaiter(void 0, void 0, void 0, function () {
+        var _a, name, price, tags, favorite, stars, imageUrl, origins, cookTime, myRestaurant, newFood, dbFood;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    if (!req.user.isRestaurantOwner) {
+                        res.status(http_status_1.HTTP_UNAUTHORIZED).send({ message: "Only restaurant owners can create food." });
+                        return [2 /*return*/];
+                    }
+
+                    return [4 /*yield*/, restaurant_model_1.RestaurantModel.findOne({ ownerId: req.user.id })];
+                case 1:
+                    myRestaurant = _b.sent();
+                    if (!myRestaurant) {
+                        res.status(http_status_1.HTTP_BAD_REQUEST).send({ message: "You must create a restaurant profile first." });
+                        return [2 /*return*/];
+                    }
+
+                    _a = req.body, name = _a.name, price = _a.price, tags = _a.tags, favorite = _a.favorite, stars = _a.stars, imageUrl = _a.imageUrl, origins = _a.origins, cookTime = _a.cookTime;
+
+                    newFood = {
+                        name: name,
+                        price: price,
+                        tags: tags || [],
+                        favorite: favorite || false,
+                        stars: stars || 5, // Default for new items since they have no reviews
+                        imageUrl: imageUrl,
+                        origins: origins || [],
+                        cookTime: cookTime,
+                        restaurantId: myRestaurant.id
+                    };
+
+                    return [4 /*yield*/, food_model_1.FoodModel.create(newFood)];
+                case 2:
+                    dbFood = _b.sent();
+                    res.send(dbFood);
+                    return [2 /*return*/];
+            }
+        });
+    });
+}));
 exports.default = router;

@@ -8,9 +8,14 @@ class AppUrls {
   static const String foodsBySearchUrl = '$foodsUrl/search/';
   static const String foodsByTagUrl = '$foodsUrl/tag/';
   static const String foodByIdUrl = '$foodsUrl/';
+  static const String foodsByRestaurantUrl = '$foodsUrl/restaurant/';
+
+  static const String restaurantsUrl = '$baseUrl/api/restaurants';
 
   static const String userLoginUrl = '$baseUrl/api/users/login';
   static const String userRegisterUrl = '$baseUrl/api/users/register';
+  static const String userRedeemPointsUrl = '$baseUrl/api/users/redeem-points';
+  static const String userMeUrl = '$baseUrl/api/users/me/';
 
   static const String ordersUrl = '$baseUrl/api/orders';
   static const String orderCreateUrl = '$ordersUrl/create';

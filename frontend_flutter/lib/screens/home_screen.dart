@@ -4,13 +4,16 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/theme.dart';
-import '../models/tag.dart';
 import '../providers/food_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/restaurant_provider.dart';
 import '../widgets/food_card.dart';
-import 'food_detail_screen.dart'; // We'll create this next
-import 'cart_screen.dart'; // We'll create this next
+import '../widgets/restaurant_card.dart';
+import '../widgets/loyalty_card.dart';
+import 'food_detail_screen.dart';
+import 'cart_screen.dart';
+import 'restaurant_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final foodProvider = context.watch<FoodProvider>();
     final cartProvider = context.watch<CartProvider>();
     final auth = context.watch<AuthProvider>();
+    final restProvider = context.watch<RestaurantProvider>();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -90,85 +94,147 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: TextField(
-              controller: _searchController,
-              onSubmitted: _onSearch,
-              decoration: InputDecoration(
-                hintText: 'Search food...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.tune),
-                  onPressed: () {},
+      body: SafeArea(
+        child: CustomScrollView(
+            slivers: [
+              // Loyalty Card
+              SliverToBoxAdapter(
+                child: auth.currentUser != null
+                  ? LoyaltyCard(points: auth.currentUser!.loyaltyPoints)
+                  : const SizedBox(),
+              ),
+
+              // Search Bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: TextField(
+                    controller: _searchController,
+                    onSubmitted: _onSearch,
+                    decoration: InputDecoration(
+                      hintText: 'Search food...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.tune),
+                        onPressed: () {},
+                      ),
+                    ),
+                  ).animate().slideY(begin: 0.2).fadeIn(delay: 300.ms),
                 ),
               ),
-            ).animate().slideY(begin: 0.2).fadeIn(delay: 300.ms),
-          ),
 
-          // Tags
-          SizedBox(
-            height: 50,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              itemCount: foodProvider.tags.length,
-              itemBuilder: (context, index) {
-                final tag = foodProvider.tags[index];
-                final isSelected = _selectedTag == tag.name;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: _HoverableTag(
-                    tag: tag.name,
-                    isSelected: isSelected,
-                    onSelected: () => _onTagSelected(tag.name),
+              // Tags
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 50,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: foodProvider.tags.length,
+                    itemBuilder: (context, index) {
+                      final tag = foodProvider.tags[index];
+                      final isSelected = _selectedTag == tag.name;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: _HoverableTag(
+                          tag: tag.name,
+                          isSelected: isSelected,
+                          onSelected: () => _onTagSelected(tag.name),
+                        ),
+                      ).animate().slideX(begin: 0.2, delay: (400 + index * 50).ms).fadeIn();
+                    },
                   ),
-                ).animate().slideX(begin: 0.2, delay: (400 + index * 50).ms).fadeIn();
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // Grid
-          Expanded(
-            child: foodProvider.isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-                : foodProvider.foods.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No foods found',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ).animate().fadeIn()
-                    : GridView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 300,
-                          childAspectRatio: 0.75, // Adjust for card height
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemCount: foodProvider.foods.length,
-                        itemBuilder: (context, index) {
-                          final food = foodProvider.foods[index];
-                          return FoodCard(
-                            food: food,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => FoodDetailScreen(foodId: food.id),
-                                ),
-                              );
-                            },
-                          ).animate().scale(delay: (200 + index % 10 * 50).ms).fadeIn();
-                        },
-                      ),
+              // Restaurants List
+              if (restProvider.restaurants.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Partner Restaurants', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 220,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: restProvider.restaurants.length,
+                      itemBuilder: (context, index) {
+                        final restaurant = restProvider.restaurants[index];
+                        return RestaurantCard(
+                          restaurant: restaurant,
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantDetailScreen(restaurantId: restaurant.id)));
+                          },
+                        ).animate().fadeIn(delay: (300 + index * 50).ms).slideX(begin: 0.1);
+                      },
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Explore Menu Items', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+              ],
+
+              // Grid
+              if (foodProvider.isLoading)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+                )
+              else if (foodProvider.foods.isEmpty)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Text(
+                      'No foods found',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ).animate().fadeIn(),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 300,
+                      childAspectRatio: 0.75,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final food = foodProvider.foods[index];
+                        return FoodCard(
+                          food: food,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => FoodDetailScreen(foodId: food.id),
+                              ),
+                            );
+                          },
+                        ).animate().scale(delay: (200 + index % 10 * 50).ms).fadeIn();
+                      },
+                      childCount: foodProvider.foods.length,
+                    ),
+                  ),
+                ),
+            ],
           ),
-        ],
       ),
     );
   }

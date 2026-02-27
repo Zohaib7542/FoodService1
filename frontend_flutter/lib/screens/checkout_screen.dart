@@ -21,6 +21,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   late TextEditingController _addressController;
   final _formKey = GlobalKey<FormState>();
 
+  int _pointsToRedeem = 0;
+  bool _isRedeeming = false;
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +99,53 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         Text('\$${cartProvider.cart.totalPrice.toStringAsFixed(2)}'),
                       ],
                     ),
+                    if (auth.currentUser != null && auth.currentUser!.loyaltyPoints > 0) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.star, color: AppTheme.primary, size: 16),
+                              const SizedBox(width: 8),
+                              Text('Use Points (${auth.currentUser!.loyaltyPoints} available)'),
+                            ],
+                          ),
+                          Switch(
+                            value: _isRedeeming,
+                            activeColor: AppTheme.primary,
+                            onChanged: (val) {
+                              setState(() {
+                                _isRedeeming = val;
+                                if (val) {
+                                  // Max points to use cannot exceed total price in cents
+                                  int maxPointsForOrder = (cartProvider.cart.totalPrice * 100).toInt();
+                                  _pointsToRedeem = auth.currentUser!.loyaltyPoints > maxPointsForOrder 
+                                      ? maxPointsForOrder 
+                                      : auth.currentUser!.loyaltyPoints;
+                                } else {
+                                  _pointsToRedeem = 0;
+                                }
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      if (_isRedeeming)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Points Discount ($_pointsToRedeem pts)',
+                              style: const TextStyle(color: AppTheme.primary),
+                            ),
+                            Text(
+                              '-\$${(_pointsToRedeem / 100).toStringAsFixed(2)}',
+                              style: const TextStyle(color: AppTheme.primary),
+                            ),
+                          ],
+                        ),
+                    ],
                     const Divider(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -105,7 +155,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          '\$${cartProvider.cart.totalPrice.toStringAsFixed(2)}',
+                          '\$${(cartProvider.cart.totalPrice - (_pointsToRedeem / 100)).toStringAsFixed(2)}',
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                 color: AppTheme.primary,
                                 fontWeight: FontWeight.bold,
@@ -121,12 +171,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
               _HoverableButton(
                 text: 'Proceed to Payment',
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
+                    // Calculate final total
+                    double finalTotal = cartProvider.cart.totalPrice - (_pointsToRedeem / 100);
+                    
+                    if (_isRedeeming && _pointsToRedeem > 0) {
+                      // Call the new endpoints we made to deduct
+                      try {
+                        await auth.redeemPoints(_pointsToRedeem);
+                      } catch (e) {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           SnackBar(content: Text('Failed to redeem points: $e'))
+                         );
+                         return;
+                      }
+                    }
+
                     final newOrder = Order(
                       id: 0,
                       items: cartProvider.cart.items,
-                      totalPrice: cartProvider.cart.totalPrice,
+                      totalPrice: finalTotal, // Use the discounted total
                       name: _nameController.text,
                       address: _addressController.text,
                       paymentId: '', // To be filled in payment screen
@@ -134,12 +199,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       status: 'NEW',
                     );
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PaymentScreen(order: newOrder),
-                      ),
-                    );
+                    if (mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PaymentScreen(order: newOrder),
+                        ),
+                      );
+                    }
                   }
                 },
                 isLoading: orderProvider.isLoading,
